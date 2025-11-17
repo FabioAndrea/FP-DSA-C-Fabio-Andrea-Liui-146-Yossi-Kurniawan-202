@@ -1,7 +1,5 @@
 
 import java.util.ArrayList;
-
-// Graph class managing nodes and edges
 class Graph {
     private ArrayList<Node> nodes;
     private ArrayList<Edge> edges;
@@ -36,8 +34,8 @@ class Graph {
 
         for (int i = 0; i < n; i++) {
             double angle = 2 * Math.PI * i / n - Math.PI / 2;
-            int x = centerX + (int) (radius * Math.cos(angle));
-            int y = centerY + (int) (radius * Math.sin(angle));
+            int x = centerX + (int)(radius * Math.cos(angle));
+            int y = centerY + (int)(radius * Math.sin(angle));
             nodes.add(new Node(i, x, y));
         }
 
@@ -50,8 +48,9 @@ class Graph {
             }
         }
     }
+
     // Dijkstra's algorithm to find shortest path
-    public void findShortestPath(int start, int end) {
+    public int findShortestPath(int start, int end) {
         int n = adjacencyMatrix.length;
         int[] dist = new int[n];
         int[] prev = new int[n];
@@ -108,6 +107,7 @@ class Graph {
                 current = from;
             }
         }
+        return dist[end];
     }
 
     public ArrayList<Node> getNodes() { return nodes; }
