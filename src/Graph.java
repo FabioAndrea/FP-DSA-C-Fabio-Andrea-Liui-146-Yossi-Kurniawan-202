@@ -1,17 +1,19 @@
-
 import java.util.ArrayList;
+
 class Graph {
     private ArrayList<Node> nodes;
     private ArrayList<Edge> edges;
     private int[][] adjacencyMatrix;
     private String[] label;
     private ArrayList<Edge> shortestPathEdges;
+    private ArrayList<Node> shortestPathNodes;
 
     public Graph(int[][] adjacencyMatrix) {
         this.adjacencyMatrix = adjacencyMatrix;
         this.nodes = new ArrayList<>();
         this.edges = new ArrayList<>();
         this.shortestPathEdges = new ArrayList<>();
+        this.shortestPathNodes = new ArrayList<>();
         initializeGraph();
     }
 
@@ -21,6 +23,7 @@ class Graph {
         this.edges = new ArrayList<>();
         this.label = l;
         this.shortestPathEdges = new ArrayList<>();
+        this.shortestPathNodes = new ArrayList<>();
         initializeGraph();
     }
 
@@ -93,21 +96,41 @@ class Graph {
 
         // Reconstruct path and mark edges
         shortestPathEdges.clear();
+        shortestPathNodes.clear();
+
         if (dist[end] != Integer.MAX_VALUE) {
+            // Build path nodes
             int current = end;
-            while (prev[current] != -1) {
-                int from = prev[current];
-                // Find the edge from 'from' to 'current'
+            while (current != -1) {
+                shortestPathNodes.add(0, nodes.get(current));
+                current = prev[current];
+            }
+
+            // Build path edges
+            for (int i = 0; i < shortestPathNodes.size() - 1; i++) {
+                int from = shortestPathNodes.get(i).getId();
+                int to = shortestPathNodes.get(i + 1).getId();
+
                 for (Edge edge : edges) {
-                    if (edge.getSource().getId() == from && edge.getTarget().getId() == current) {
+                    if (edge.getSource().getId() == from && edge.getTarget().getId() == to) {
                         shortestPathEdges.add(edge);
                         break;
                     }
                 }
-                current = from;
             }
         }
         return dist[end];
+    }
+
+    public void resetAnimation() {
+        for (Node node : nodes) {
+            node.setAnimating(false);
+            node.setAnimationProgress(0f);
+        }
+        for (Edge edge : edges) {
+            edge.setAnimating(false);
+            edge.setAnimationProgress(0f);
+        }
     }
 
     public ArrayList<Node> getNodes() { return nodes; }
@@ -115,4 +138,5 @@ class Graph {
     public int[][] getAdjacencyMatrix() { return adjacencyMatrix; }
     public String[] getLabel() { return label; }
     public ArrayList<Edge> getShortestPathEdges() { return shortestPathEdges; }
+    public ArrayList<Node> getShortestPathNodes() { return shortestPathNodes; }
 }

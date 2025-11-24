@@ -1,8 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-// Panel for drawing the graph
+import java.awt.event.*;
+
 class GraphPanel extends JPanel {
     private Graph graph;
     private Node draggedNode = null;
@@ -61,21 +60,46 @@ class GraphPanel extends JPanel {
 
             // Check if this edge is part of shortest path
             boolean isShortestPath = graph.getShortestPathEdges().contains(edge);
+            boolean isAnimating = edge.isAnimating();
+            float progress = edge.getAnimationProgress();
 
-            // Set color based on whether it's in shortest path
-            if (isShortestPath) {
-                g2d.setColor(new Color(220, 20, 60)); // Red for shortest path
+            // Set color based on animation state
+            if (isAnimating && progress > 0) {
+                // Animate from gray to red
+                int red = (int)(120 + (100 * progress));
+                int green = (int)(120 - (100 * progress));
+                int blue = (int)(120 - (60 * progress));
+                g2d.setColor(new Color(red, green, blue));
+                g2d.setStroke(new BasicStroke(2 + (2 * progress)));
+            } else if (isShortestPath && !isAnimating) {
+                g2d.setColor(new Color(220, 20, 60)); // Red for completed path
                 g2d.setStroke(new BasicStroke(4));
             } else {
                 g2d.setColor(Color.GRAY);
                 g2d.setStroke(new BasicStroke(2));
             }
 
-            // Draw line
-            g2d.drawLine(source.getX(), source.getY(), target.getX(), target.getY());
+            // Draw line with animation
+            if (isAnimating && progress < 1.0f) {
+                // Draw animated line from source to target
+                int x1 = source.getX();
+                int y1 = source.getY();
+                int x2 = (int)(x1 + (target.getX() - x1) * progress);
+                int y2 = (int)(y1 + (target.getY() - y1) * progress);
+                g2d.drawLine(x1, y1, x2, y2);
+
+                // Draw pulsing circle at animation point
+                int pulseRadius = (int)(8 + 4 * Math.sin(progress * Math.PI * 4));
+                g2d.fillOval(x2 - pulseRadius, y2 - pulseRadius, pulseRadius * 2, pulseRadius * 2);
+            } else {
+                // Draw complete line
+                g2d.drawLine(source.getX(), source.getY(), target.getX(), target.getY());
+            }
 
             // Draw arrow
-            drawArrow(g2d, source.getX(), source.getY(), target.getX(), target.getY(), isShortestPath);
+            if (!isAnimating || progress >= 1.0f) {
+                drawArrow(g2d, source.getX(), source.getY(), target.getX(), target.getY(), isShortestPath);
+            }
 
             // Draw weight
             int midX = (source.getX() + target.getX()) / 2;
@@ -90,8 +114,8 @@ class GraphPanel extends JPanel {
             g2d.fillRect(midX - strWidth/2 - 3, midY - 10, strWidth + 6, 18);
 
             // Draw weight text
-            if (isShortestPath) {
-                g2d.setColor(new Color(220, 20, 60)); // Red for shortest path
+            if (isShortestPath || isAnimating) {
+                g2d.setColor(new Color(220, 20, 60)); // Red
             } else {
                 g2d.setColor(new Color(100, 100, 100)); // Dark gray
             }
@@ -101,28 +125,48 @@ class GraphPanel extends JPanel {
         // Draw nodes
         for (Node node : graph.getNodes()) {
             // Check if node is part of shortest path
-            boolean isInShortestPath = false;
-            for (Edge edge : graph.getShortestPathEdges()) {
-                if (edge.getSource().getId() == node.getId() || edge.getTarget().getId() == node.getId()) {
-                    isInShortestPath = true;
-                    break;
+            boolean isInShortestPath = graph.getShortestPathNodes().contains(node);
+            boolean isAnimating = node.isAnimating();
+            float progress = node.getAnimationProgress();
+
+            // Determine node color with animation
+            Color nodeColor;
+            if (isAnimating) {
+                // Animate from blue to red
+                int red = (int)(70 + (150 * progress));
+                int green = (int)(130 - (110 * progress));
+                int blue = (int)(180 - (120 * progress));
+                nodeColor = new Color(red, green, blue);
+            } else if (isInShortestPath) {
+                nodeColor = new Color(220, 20, 60); // Red for nodes in shortest path
+            } else {
+                nodeColor = new Color(70, 130, 180);
+            }
+
+            // Draw pulsing glow for animating nodes
+            if (isAnimating) {
+                float pulseSize = 1.0f + 0.3f * (float)Math.sin(progress * Math.PI * 8);
+                int glowRadius = (int)(node.getRadius() * pulseSize);
+
+                for (int i = 3; i >= 0; i--) {
+                    int alpha = (int)(50 - i * 10);
+                    g2d.setColor(new Color(220, 20, 60, alpha));
+                    int offset = i * 4;
+                    g2d.fillOval(node.getX() - glowRadius - offset,
+                            node.getY() - glowRadius - offset,
+                            (glowRadius + offset) * 2,
+                            (glowRadius + offset) * 2);
                 }
             }
 
-            // Color nodes - no orange when dragging
-            if (isInShortestPath) {
-                g2d.setColor(new Color(220, 20, 60)); // Red for nodes in shortest path
-            } else {
-                g2d.setColor(new Color(70, 130, 180));
-            }
-
+            g2d.setColor(nodeColor);
             g2d.fillOval(node.getX() - node.getRadius(),
                     node.getY() - node.getRadius(),
                     node.getRadius() * 2,
                     node.getRadius() * 2);
 
             // Draw node border
-            if (isInShortestPath) {
+            if (isInShortestPath || isAnimating) {
                 g2d.setColor(new Color(139, 0, 0)); // Dark red border
                 g2d.setStroke(new BasicStroke(3));
             } else {
