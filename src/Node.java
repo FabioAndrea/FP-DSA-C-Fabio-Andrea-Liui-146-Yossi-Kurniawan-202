@@ -1,4 +1,3 @@
-// Node class representing a vertex in the graph
 class Node {
     private int id;
     private int x, y;
